@@ -45,10 +45,7 @@ __ISO8601_PERIOD_PREFIX = re.compile("^([+-])?P")
 
 
 def combine_durations(elems: List[Union[int, float]]) -> Union[int, float]:
-    result = 0.0
-    for d in elems:
-        result += abs(d)
-    return result if elems[0] >= 0 else -result
+    pass
 
 
 time_unit_parser = reduce(
@@ -75,10 +72,7 @@ def parse_duration(ds: str) -> timedelta:
 
 
 def parse_optional_duration(ds: str) -> Optional[timedelta]:
-    try:
-        return parse_duration(ds)
-    except Exception:
-        return None
+    pass
 
 
 def duration_str(duration: timedelta, precision: Optional[int] = 0, down_to_unit: Optional[str] = None) -> str:

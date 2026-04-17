@@ -35,21 +35,13 @@ class CoreEvents(threading.Thread):
         self.__connected = False
 
     def connected(self) -> bool:
-        return self.__connected
+        pass
 
     def __del__(self) -> None:
         remove_event_listener(EventType.SHUTDOWN, self.shutdown)
 
     def run(self) -> None:
-        self.name = "eventbus-listener"
-        add_event_listener(EventType.SHUTDOWN, self.shutdown)
-        while not self.shutdown_event.is_set():
-            log.debug("Connecting to fixcore event bus")
-            try:
-                self.connect()
-            except Exception as e:
-                log.error(e)
-            time.sleep(1)
+        pass
 
     def connect(self) -> None:
         log.debug(f"Connecting to {self.ws_uri}")
@@ -72,37 +64,22 @@ class CoreEvents(threading.Thread):
         self.ws.run_forever(sslopt=sslopt, ping_interval=20, ping_timeout=10, ping_payload="ping")
 
     def shutdown(self, _: Optional[Event] = None) -> None:
-        log.debug("Received shutdown event - shutting down fixcore event bus listener")
-        self.shutdown_event.set()
-        if self.ws:
-            self.ws.close()
+        pass
 
     def on_message(self, _: WebSocket, message: str) -> None:
-        try:
-            json_message: Json = json.loads(message)
-        except json.JSONDecodeError:
-            log.exception(f"Unable to decode received message {message}")
-            return
-        log.debug(f"Received event: {json_message}")
-        if self.message_processor is not None and callable(self.message_processor):
-            try:
-                self.message_processor(json_message)
-            except Exception:
-                log.exception(f"Something went wrong while processing {message}")
+        pass
 
     def on_error(self, _: WebSocket, e: Exception) -> None:
-        log.debug(f"Event bus error: {e!r}")
+        pass
 
     def on_close(self, _: WebSocket, close_status_code: int, close_msg: str) -> None:
-        self.__connected = False
-        log.debug("Disconnected from fixcore event bus")
+        pass
 
     def on_open(self, _: WebSocket) -> None:
-        self.__connected = True
-        log.debug("Connected to fixcore event bus")
+        pass
 
     def on_ping(self, _: WebSocket, message: str) -> None:
-        log.debug("Ping from fixcore event bus")
+        pass
 
     def on_pong(self, _: WebSocket, message: str) -> None:
-        log.debug("Pong from fixcore event bus")
+        pass

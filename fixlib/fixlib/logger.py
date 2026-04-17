@@ -34,29 +34,7 @@ getLogger("fix").setLevel(INFO)
 
 
 def add_args(arg_parser: ArgumentParser) -> None:
-    group = arg_parser.add_mutually_exclusive_group()
-    group.add_argument(
-        "--verbose",
-        "-v",
-        help="Verbose logging",
-        dest="verbose",
-        action="store_true",
-        default=False,
-    )
-    group.add_argument(
-        "--trace",
-        help="Trage logging",
-        dest="trace",
-        action="store_true",
-        default=False,
-    )
-    group.add_argument(
-        "--quiet",
-        help="Only log errors",
-        dest="quiet",
-        action="store_true",
-        default=False,
-    )
+    pass
 
 
 @define
@@ -85,34 +63,16 @@ class JsonFormatter(Formatter):
         self.__use_time = "asctime" in self.fmt_dict.values()
 
     def usesTime(self) -> bool:  # noqa: N802
-        return self.__use_time
+        pass
 
     def formatMessage(self, record: LogRecord) -> dict:  # type: ignore # noqa: N802
-        return {fmt_key: record.__dict__[fmt_val] for fmt_key, fmt_val in self.fmt_dict.items()}
+        pass
 
     def formatJsonMessage(self, record) -> Json:  # type: ignore # noqa: N802
-        record.message = record.getMessage()
-
-        if self.__use_time:
-            record.asctime = self.formatTime(record, self.time_format)
-
-        message_dict = self.formatMessage(record)
-        message_dict.update(self.static_values)
-
-        if record.exc_info:
-            if not record.exc_text:
-                record.exc_text = self.formatException(record.exc_info)
-
-        if record.exc_text:
-            message_dict["exception"] = record.exc_text
-
-        if record.stack_info:
-            message_dict["stack_info"] = self.formatStack(record.stack_info)
-        return message_dict
+        pass
 
     def format(self, record: LogRecord) -> str:
-        message_dict = self.formatJsonMessage(record)
-        return json.dumps(message_dict, default=str)
+        pass
 
 
 def setup_logger(
@@ -194,11 +154,10 @@ def add_logging_level(level_name: str, level_num: int, method_name: Optional[str
         raise AttributeError("{} already defined in logger class".format(method_name))
 
     def log_for_level(self: logging.Logger, message: str, *args: Any, **kwargs: Any) -> None:
-        if self.isEnabledFor(level_num):
-            self._log(level_num, message, args, **kwargs)
+        pass
 
     def log_to_root(message: str, *args: Any, **kwargs: Any) -> None:
-        logging.log(level_num, message, *args, **kwargs)
+        pass
 
     logging.addLevelName(level_num, level_name)
     setattr(logging, level_name, level_num)

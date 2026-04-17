@@ -41,7 +41,7 @@ UTC_Date_Format = "%Y-%m-%dT%H:%M:%SZ"
 
 
 def rnd_str(str_len: int = 10) -> str:
-    return "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(str_len))
+    pass
 
 
 def utc() -> datetime:
@@ -58,14 +58,7 @@ def utc_str(dto: Optional[datetime] = None) -> str:
 
 
 def parse_utc(date_string: str) -> datetime:
-    dt = datetime.fromisoformat(date_string)
-    if (
-        not dt.tzinfo
-        or dt.tzinfo.utcoffset(None) is None
-        or dt.tzinfo.utcoffset(None).total_seconds() != 0  # type: ignore
-    ):
-        dt = dt.astimezone(timezone.utc)
-    return dt
+    pass
 
 
 def make_valid_timestamp(timestamp: datetime) -> Optional[datetime]:
@@ -89,9 +82,7 @@ def get_local_tzinfo() -> ZoneInfo:
 
 def chunks(items: List[T], n: int) -> Iterator[List[T]]:
     """Split a list of items into multiple lists of size n and yield each chunk"""
-    for s in range(0, len(items), n):
-        e = s + n
-        yield items[s:e]
+    pass
 
 
 def unset_cached_properties(obj: Any) -> None:
@@ -132,40 +123,11 @@ def sha256sum(filename: str, buffer_size: int = 128 * 1024) -> str:
 
 def log_runtime(f: DecoratedFn) -> DecoratedFn:
     @wraps(f)
-    def timer(*args: Any, **kwargs: Any) -> Any:
-        start = time.time()
-        ret = f(*args, **kwargs)
-        runtime = time.time() - start
-        args_str = ", ".join([repr(arg) for arg in args])
-        kwargs_str = ", ".join([f"{k}={repr(v)}" for k, v in kwargs.items()])
-        if len(args) > 0 and len(kwargs) > 0:
-            args_str += ", "
-        log.debug(f"Runtime of {f.__name__}({args_str}{kwargs_str}): {runtime:.3f} seconds")
-        return ret
-
-    return timer  # type: ignore
+    pass
 
 
 def except_log_and_pass(do_raise: Optional[Tuple[Any]] = None) -> Callable[..., Any]:
-    do_raise_tuple = do_raise if do_raise is not None else ()
-
-    def acallable(f: Callable[..., Any]) -> Callable[..., Any]:
-        @wraps(f)
-        def catch_and_log(*args: Any, **kwargs: Any) -> Any:
-            try:
-                return f(*args, **kwargs)
-            except do_raise_tuple:
-                raise
-            except Exception:
-                args_str = ", ".join([repr(arg) for arg in args])
-                kwargs_str = ", ".join([f"{k}={repr(v)}" for k, v in kwargs.items()])
-                if len(args) > 0 and len(kwargs) > 0:
-                    args_str += ", "
-                log.exception(f"Caught exception in {f.__name__}({args_str}{kwargs_str})")
-
-        return catch_and_log
-
-    return acallable
+    pass
 
 
 resource_attributes_blacklist = ["event_log"]
@@ -318,28 +280,7 @@ def ordinal(num: int) -> str:
 
 def safe_members_in_tarfile(tarfile: TarFile) -> List[Any]:
     # via vmware/pyvcloud/vcd/utils.py
-    def badpath(path: str, base: str) -> bool:
-        # joinpath will ignore base if path is absolute
-        return not os.path.realpath(os.path.abspath(os.path.join(base, path))).startswith(base)
-
-    def badlink(info: TarInfo, base: str) -> bool:
-        # Links are interpreted relative to the directory containing the link
-        tip = os.path.realpath(os.path.abspath(os.path.join(base, os.path.dirname(info.name))))
-        return badpath(info.linkname, base=tip)
-
-    base = os.path.realpath(os.path.abspath((".")))
-    basename = os.path.basename(tarfile.name)  # type: ignore
-    result = []
-    for tar_info in tarfile.getmembers():
-        if badpath(tar_info.name, base):
-            log.error(f"Error in {basename}, {tar_info.name} is blocked: illegal path")
-        elif tar_info.issym() and badlink(tar_info, base):
-            log.error(f"Error in {basename}, {tar_info.name} is blocked:" f" symlink to {tar_info.linkname}")
-        elif tar_info.islnk() and badlink(tar_info, base):
-            log.error(f"Error in {basename}, {tar_info.name} is blocked:" f" hard link to {tar_info.linkname}")
-        else:
-            result.append(tar_info)
-    return result
+    pass
 
 
 def rrdata_as_dict(record_type: str, record_data: str) -> Dict[str, Any]:
@@ -417,11 +358,7 @@ env_var_substitution_pattern = re.compile(r"\$\((\w+)\)")
 
 
 def is_env_var_string(obj: Any) -> bool:
-    is_string = isinstance(obj, str)
-    if not is_string:
-        return False
-    has_env_var = re.search(env_var_substitution_pattern, obj) is not None
-    return has_env_var
+    pass
 
 
 def replace_env_vars(elem: JsonElement, environment: Mapping[str, str], keep_unresolved: bool = True) -> JsonElement:

@@ -64,22 +64,16 @@ class RWLock:
         self.write_access = _WriteAccess(self)
 
     def reader_acquire(self) -> None:
-        self.__readers_queue.acquire()
-        self.__no_readers.acquire()
-        self.__read_switch.acquire(self.__no_writers)
-        self.__no_readers.release()
-        self.__readers_queue.release()
+        pass
 
     def reader_release(self) -> None:
-        self.__read_switch.release(self.__no_writers)
+        pass
 
     def writer_acquire(self) -> None:
-        self.__write_switch.acquire(self.__no_readers)
-        self.__no_writers.acquire()
+        pass
 
     def writer_release(self) -> None:
-        self.__no_writers.release()
-        self.__write_switch.release(self.__no_readers)
+        pass
 
 
 class _LightSwitch:

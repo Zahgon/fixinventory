@@ -145,11 +145,7 @@ class TLSData:
             add_event_listener(EventType.SHUTDOWN, self.shutdown, blocking=False)
 
     def shutdown(self, event: Optional[FixEvent] = None) -> None:
-        if self.__watcher is not None:
-            with self.__exit:
-                self.__exit.notify()
-            self.__watcher.join()
-            self.__watcher = None
+        pass
 
     def __getstate__(self) -> Dict[str, Any]:
         d = self.__dict__.copy()
@@ -187,37 +183,13 @@ class TLSData:
         self.__dict__.update(d)
 
     def reload(self) -> None:
-        self.__loaded.clear()
-        self.load()
+        pass
 
     def __certificates_watcher(self) -> None:
-        while True:
-            with self.__exit:
-                if self.__loaded.is_set():
-                    for cert in (self.__ca_cert, self.__cert):
-                        if (
-                            isinstance(cert, Certificate)
-                            and cert.not_valid_after_utc < datetime.now(timezone.utc) - self.renew_before
-                        ):
-                            self.reload()
-                            break
-                    self.__refresh_files_on_disk()
-                if self.__exit.wait(60):
-                    break
+        pass
 
     def __refresh_files_on_disk(self, refresh_every_sec: int = 10800) -> None:
-        if not self.__loaded.is_set():
-            return
-        try:
-            last_ca_cert_update = time.time() - os.path.getmtime(self.__ca_cert_path)
-            last_cert_update = time.time() - os.path.getmtime(self.__cert_path)
-            if last_ca_cert_update > refresh_every_sec or last_cert_update > refresh_every_sec:
-                log.debug("Refreshing cert/key files on disk")
-                write_ca_bundle(self.__ca_cert, self.__ca_cert_path, include_certifi=True)  # type: ignore
-                write_cert_to_file(self.__cert, self.__cert_path)  # type: ignore
-                write_key_to_file(self.__key, self.__key_path)  # type: ignore
-        except FileNotFoundError:
-            pass
+        pass
 
     def load(self) -> None:
         with self.__load_lock:
@@ -271,46 +243,31 @@ class TLSData:
 
     @property
     def ca_cert(self) -> Certificate:
-        if not os.path.isfile(self.__ca_cert_path):
-            self.load()
-        assert self.__ca_cert is not None, "CA cert is None"
-        return self.__ca_cert
+        pass
 
     @property
     def cert(self) -> Certificate:
-        if not self.__loaded.is_set():
-            self.load()
-        assert self.__cert is not None, "Cert is None"
-        return self.__cert
+        pass
 
     @property
     def key(self) -> RSAPrivateKey:
-        if not self.__loaded.is_set():
-            self.load()
-        assert self.__key is not None, "Key is None"
-        return self.__key
+        pass
 
     @property
     def ca_cert_path(self) -> str:
-        if not os.path.isfile(self.__ca_cert_path):
-            self.load()
-        return self.__ca_cert_path
+        pass
 
     @property
     def cert_path(self) -> str:
-        if not self.__loaded.is_set():
-            self.load()
-        return self.__cert_path
+        pass
 
     @property
     def key_path(self) -> str:
-        if not self.__loaded.is_set():
-            self.load()
-        return self.__key_path
+        pass
 
     @property
     def sslopt(self) -> Dict[str, str]:
-        return {"ca_certs": self.ca_cert_path}
+        pass
 
     @property
     def verify(self) -> Union[str, bool]:
@@ -321,45 +278,8 @@ class TLSData:
 
     @property
     def ssl_context(self) -> SSLContext:
-        context = create_default_context()
-        context.load_verify_locations(cafile=self.ca_cert_path)
-        return context
+        pass
 
     @staticmethod
     def add_args(arg_parser: ArgumentParser, ca_only: bool = False) -> None:
-        arg_parser.add_argument(
-            "--ca-cert",
-            help="Path to custom CA certificate file",
-            default=None,
-            type=str,
-            dest="ca_cert",
-        )
-        if not ca_only:
-            arg_parser.add_argument(
-                "--cert",
-                help="Path to custom certificate file",
-                default=None,
-                type=str,
-                dest="cert",
-            )
-            arg_parser.add_argument(
-                "--cert-key",
-                help="Path to custom certificate key file",
-                default=None,
-                type=str,
-                dest="cert_key",
-            )
-            arg_parser.add_argument(
-                "--cert-key-pass",
-                help="Passphrase for certificate key file",
-                default=None,
-                type=str,
-                dest="cert_key_pass",
-            )
-        arg_parser.add_argument(
-            "--no-verify-certs",
-            help="Turn off certificate verification",
-            default=True,
-            dest="verify_certs",
-            action="store_false",
-        )
+        pass

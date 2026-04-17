@@ -36,16 +36,7 @@ metrics_resource_cleanup = Summary("fix_resource_cleanup_seconds", "Time it took
 
 def unless_protected(f: Callable[..., bool]) -> Callable[..., bool]:
     @wraps(f)
-    def wrapper(self: Any, *args: Any, **kwargs: Any) -> bool:
-        if not isinstance(self, BaseResource):
-            raise ValueError("unless_protected() only supports BaseResource type objects")
-        if self.protected:
-            log.error(f"Resource {self.rtdname} is protected - refusing modification")
-            self.log(("Modification was requested even though resource is protected" " - refusing"))
-            return False
-        return f(self, *args, **kwargs)
-
-    return wrapper
+    pass
 
 
 # To define predecessors and successors of a resource by kind
@@ -71,11 +62,7 @@ class EdgeType(Enum):
 
     @staticmethod
     def from_value(value: Optional[str] = None) -> EdgeType:
-        try:
-            return EdgeType(value)
-        except ValueError:
-            pass
-        return EdgeType.default
+        pass
 
 
 class ResourceChanges:
@@ -383,23 +370,19 @@ class BaseResource(ABC):
 
         E.g. instance -> aws -> 123457 -> us-east-1 -> us-east-1b -> i-987654 -> myServer
         """
-        if self._graph is None:
-            raise RuntimeError(f"_keys() called on {self.rtdname} before resource was added to graph")
-        return self.kind, self.cloud().id, self.account().id, self.region().id, self.zone().id, self.id
+        pass
 
     @property
     def safe_name(self) -> str:
-        return self.name or self.id
+        pass
 
     @property
     def dname(self) -> str:
-        if self.id == self.name:
-            return self.id
-        return f"{self.name} ({self.id})"
+        pass
 
     @property
     def kdname(self) -> str:
-        return f"{self.kind} {self.dname}"
+        pass
 
     rtdname = kdname
 
@@ -422,33 +405,22 @@ class BaseResource(ABC):
         self._changes.add("log")
 
     def add_finding(self, provider: str, finding: Finding) -> None:
-        for assessment in self._assessments:
-            if assessment.provider == provider:
-                assessment.findings.append(finding)
-                return
-        self._assessments.append(Assessment(provider=provider, findings=[finding]))
+        pass
 
     def add_change(self, change: str) -> None:
-        self._changes.add(change)
+        pass
 
     @property
     def changes(self) -> ResourceChanges:
-        return self._changes
+        pass
 
     @property
     def event_log(self) -> List[Json]:
-        return self.__log
+        pass
 
     @property
     def str_event_log(self) -> List[Json]:
-        return [
-            {
-                "timestamp": utc_str(le["timestamp"]),
-                "msg": le["msg"],
-                "exception": le["exception"],
-            }
-            for le in self.__log
-        ]
+        pass
 
     def update_tag(self, key: str, value: str) -> bool:
         raise NotImplementedError
@@ -459,260 +431,98 @@ class BaseResource(ABC):
     @cached_property
     def chksum(self) -> str:
         """Return a checksum of the resource."""
-        return (
-            base64.urlsafe_b64encode(hashlib.blake2b(str(self._keys()).encode(), digest_size=16).digest())
-            .decode("utf-8")
-            .rstrip("=")
-        )
+        pass
 
     @property
     def age(self) -> Optional[timedelta]:
-        now = utc()
-        if self.ctime is not None:
-            return now - self.ctime
-        else:
-            return None
+        pass
 
     @property
     def last_access(self) -> Optional[timedelta]:
-        now = utc()
-        if self.atime is not None:
-            return now - self.atime
-        else:
-            return None
+        pass
 
     @property
     def last_update(self) -> Optional[timedelta]:
-        now = utc()
-        if self.mtime is not None:
-            return now - self.mtime
-        else:
-            return None
+        pass
 
     def _ctime_getter(self) -> Optional[datetime]:
-        if ctime_string := self.tags.get("fix:ctime"):
-            try:
-                return make_valid_timestamp(datetime.fromisoformat(ctime_string))
-            except ValueError:
-                pass
-        return self._ctime
+        pass
 
     def _ctime_setter(self, value: Optional[datetime]) -> None:
-        self._ctime = make_valid_timestamp(value) if value else None  # type: ignore
+        pass
 
     def _atime_getter(self) -> Optional[datetime]:
-        return self._atime
+        pass
 
     def _atime_setter(self, value: Optional[datetime]) -> None:
-        self._atime = make_valid_timestamp(value) if value else None  # type: ignore
+        pass
 
     def _mtime_getter(self) -> Optional[datetime]:
-        return self._mtime
+        pass
 
     def _mtime_setter(self, value: Optional[datetime]) -> None:
-        self._mtime = make_valid_timestamp(value) if value else None  # type: ignore
+        pass
 
     @property
     def clean(self) -> bool:
-        return self._clean
+        pass
 
     @clean.setter
     @unless_protected
     def clean(self, value: bool) -> None:
-        if isinstance(self, PhantomBaseResource) and value:
-            raise ValueError(f"Can't cleanup phantom resource {self.rtdname}")
-
-        clean_str = "" if value else "not "
-        self.log(f"Setting to {clean_str}be cleaned")
-        log.debug(f"Setting {self.rtdname} to {clean_str}be cleaned")
-        self._changes.add("clean")
-        self._clean = value
+        pass
 
     @property
     def cleaned(self) -> bool:
-        return self._cleaned
+        pass
 
     @property
     def protected(self) -> bool:
-        return self._protected
+        pass
 
     @protected.setter
     def protected(self, value: bool) -> None:
         """Protects the resource from cleanup
         This property acts like a fuse, once protected it can't be unprotected
         """
-        if self.protected:
-            log.debug(f"Resource {self.rtdname} is already protected")
-            return
-        if value:
-            log.debug(f"Protecting resource {self.rtdname}")
-            self.log("Protecting resource")
-            self._changes.add("protected")
-            self._protected = value
+        pass
 
     # deprecated. future collectors plugins should be responsible for running pre_cleanup
     # and calling delete_resource on resources
     @metrics_resource_cleanup.time()
     @unless_protected
     def cleanup(self, graph: Optional[Any] = None) -> bool:
-        if isinstance(self, PhantomBaseResource):
-            raise RuntimeError(f"Can't cleanup phantom resource {self.rtdname}")
-
-        if self.cleaned:
-            log.info(f"Resource {self.rtdname} has already been cleaned up")
-            return True
-
-        self._changes.add("cleaned")
-        if graph is None:
-            graph = self._graph
-
-        account = self.account(graph)
-        region = self.region(graph)
-        if not isinstance(account, BaseAccount) or not isinstance(region, BaseRegion):
-            raise RuntimeError(f"Could not determine account or region for cleanup of {self.rtdname}")
-
-        log_suffix = f" in account {account.dname} region {region.name}"
-        self.log("Trying to clean up")
-        log.info(f"Trying to clean up {self.rtdname}{log_suffix}")
-        try:
-            if deleted := self.delete(graph):
-                self._cleaned = True
-                self.log("Successfully cleaned up")
-                log.info(f"Successfully cleaned up {self.rtdname}{log_suffix}")
-        except Exception as e:
-            self.log("An error occurred during clean up", exception=e)
-            log.exception(f"An error occurred during clean up {self.rtdname}{log_suffix}")
-            cloud = self.cloud(graph)
-            metrics_resource_cleanup_exceptions.labels(
-                cloud=cloud.name,
-                account=account.dname,
-                region=region.name,
-                kind=self.kind,
-            ).inc()
-            raise
-        if not deleted:
-            raise RuntimeError(f"Failed to clean up {self.rtdname}{log_suffix}")
-        return True
+        pass
 
     # deprecated. future collectors plugins should be responsible for running pre_cleanup
     # and calling pre_delete_resource on resources
     @unless_protected
     def pre_cleanup(self, graph: Optional[Any] = None) -> bool:
-        if not hasattr(self, "pre_delete"):
-            return True
-
-        if graph is None:
-            graph = self._graph
-
-        if isinstance(self, PhantomBaseResource):
-            raise RuntimeError(f"Can't cleanup phantom resource {self.rtdname}")
-
-        if self.cleaned:
-            log.debug(f"Resource {self.rtdname} has already been cleaned up")
-            return True
-
-        account = self.account(graph)
-        region = self.region(graph)
-        if not isinstance(account, BaseAccount) or not isinstance(region, BaseRegion):
-            log.error(("Could not determine account or region for pre cleanup of" f" {self.rtdname}"))
-            return False
-
-        log_suffix = f" in account {account.dname} region {region.name}"
-        self.log("Trying to run pre clean up")
-        log.debug(f"Trying to run pre clean up {self.rtdname}{log_suffix}")
-        try:
-            if not getattr(self, "pre_delete")(graph):
-                self.log("Failed to run pre clean up")
-                log.error(f"Failed to run pre clean up {self.rtdname}{log_suffix}")
-                return False
-            self.log("Successfully ran pre clean up")
-            log.info(f"Successfully ran pre clean up {self.rtdname}{log_suffix}")
-        except Exception as e:
-            self.log("An error occurred during pre clean up", exception=e)
-            log.exception(f"An error occurred during pre clean up {self.rtdname}{log_suffix}")
-            cloud = self.cloud(graph)
-            metrics_resource_pre_cleanup_exceptions.labels(
-                cloud=cloud.name,
-                account=account.dname,
-                region=region.name,
-                kind=self.kind,
-            ).inc()
-            raise
-        return True
+        pass
 
     @unless_protected
     def delete(self, graph: Any) -> bool:
-        return False
+        pass
 
     def account(self, graph: Optional[Any] = None) -> "BaseAccount":
-        account: Optional[BaseAccount] = None
-        if graph is None:
-            graph = self._graph
-        if self._account:
-            account = self._account
-        elif graph:
-            account = graph.search_first_parent_class(self, BaseAccount)
-        if account is None:
-            account = UnknownAccount(id="undefined", tags={})
-        return account
+        pass
 
     def cloud(self, graph: Optional[Any] = None) -> "BaseCloud":
-        cloud: Optional[BaseCloud] = None
-        if graph is None:
-            graph = self._graph
-        if self._cloud:
-            cloud = self._cloud
-        elif graph:
-            cloud = graph.search_first_parent_class(self, BaseCloud)
-        if cloud is None:
-            cloud = UnknownCloud(id="undefined", tags={})
-        return cloud
+        pass
 
     def region(self, graph: Optional[Any] = None) -> "BaseRegion":
-        region: Optional[BaseRegion] = None
-        if graph is None:
-            graph = self._graph
-        if self._region:
-            region = self._region
-        elif graph:
-            region = graph.search_first_parent_class(self, BaseRegion)
-        if region is None:
-            region = UnknownRegion(id="undefined", tags={})
-        return region
+        pass
 
     def zone(self, graph: Optional[Any] = None) -> "BaseZone":
-        zone: Optional[BaseZone] = None
-        if graph is None:
-            graph = self._graph
-        if self._zone:
-            zone = self._zone
-        elif graph:
-            zone = graph.search_first_parent_class(self, BaseZone)
-        if zone is None:
-            zone = UnknownZone(id="undefined", tags={})
-        return zone
+        pass
 
     def resource_location(self, graph: Optional[Any] = None) -> "BaseResource":
-        if graph is None:
-            graph = self._graph
-        zone = self.zone(graph)
-        if zone.name != "undefined":
-            return zone
-        region = self.region(graph)
-        if region.name != "undefined":
-            return region
-        account = self.account(graph)
-        if account.name != "undefined":
-            return account
-        cloud = self.cloud(graph)
-        if cloud.name != "undefined":
-            return cloud
-        return UnknownLocation(id="undefined", tags={})
+        pass
 
     def add_deferred_connection(
         self, search: Dict[str, Any], parent: bool = True, edge_type: EdgeType = EdgeType.default
     ) -> None:
-        self._deferred_connections.append({"search": search, "parent": parent, "edge_type": edge_type})
+        pass
 
     def resolve_deferred_connections(self, graph: Any) -> None:
         if graph is None:
@@ -756,30 +566,19 @@ class BaseResource(ABC):
 
     def ancestors(self, graph: Any, edge_type: Optional[EdgeType] = None) -> Iterator[BaseResource]:
         """Returns an iterator of the node's ancestors"""
-        if graph is None:
-            graph = self._graph
-        if graph is None:
-            return iter(())
-        return graph.ancestors(self, edge_type=edge_type)  # type: ignore
+        pass
 
     def descendants(self, graph: Any, edge_type: Optional[EdgeType] = None) -> Iterator[BaseResource]:
         """Returns an iterator of the node's descendants"""
-        if graph is None:
-            graph = self._graph
-        if graph is None:
-            return iter(())
-        return graph.descendants(self, edge_type=edge_type)  # type: ignore
+        pass
 
     @property
     def _graph(self) -> Optional[Any]:
-        if self.__graph is not None:
-            return self.__graph()
-        else:
-            return None
+        pass
 
     @_graph.setter
     def _graph(self, value: Any) -> None:
-        self.__graph = weakref.ref(value)  # type: ignore
+        pass
 
     def __getstate__(self) -> Dict[str, Any]:
         ret = self.__dict__.copy()
@@ -825,20 +624,16 @@ class PhantomBaseResource(BaseResource):
     _kind_description: ClassVar[str] = "A generic phantom resource."
 
     def update_tag(self, key: str, value: str) -> bool:
-        log.error(f"Resource {self.rtdname} is a phantom resource and does not maintain tags")
-        return False
+        pass
 
     def delete_tag(self, key: str) -> bool:
-        log.error(f"Resource {self.rtdname} is a phantom resource and does not maintain tags")
-        return False
+        pass
 
     def delete(self, graph: Any) -> bool:
-        log.error(f"Resource {self.rtdname} is a phantom resource and can't be deleted")
-        return False
+        pass
 
     def cleanup(self, graph: Optional[Any] = None) -> bool:
-        log.error(f"Resource {self.rtdname} is a phantom resource and can't be cleaned up")
-        return False
+        pass
 
 
 @define(eq=False, slots=False)
@@ -861,10 +656,7 @@ class BaseQuota(PhantomBaseResource):
 
     @property
     def usage_percentage(self) -> float:
-        if self.quota is not None and self.usage is not None and self.quota > 0.0:
-            return self.usage / self.quota * 100
-        else:
-            return 0.0
+        pass
 
 
 @define(eq=False, slots=False)
@@ -919,7 +711,7 @@ class BaseCloud(PhantomBaseResource):
     _metadata: ClassVar[Dict[str, Any]] = {"icon": "cloud", "group": "management"}
 
     def cloud(self, graph: Optional[Any] = None) -> BaseCloud:
-        return self
+        pass
 
 
 @define(eq=False, slots=False)
@@ -930,7 +722,7 @@ class BaseAccount(BaseResource):
     _metadata: ClassVar[Dict[str, Any]] = {"icon": "account", "group": "management"}
 
     def account(self, graph: Optional[Any] = None) -> BaseAccount:
-        return self
+        pass
 
 
 @define(eq=False, slots=False)
@@ -946,12 +738,10 @@ class BaseRegion(PhantomBaseResource):
     region_in_use: Optional[bool] = field(default=None, metadata={"description": "Indicates if the region is in use."})
 
     def _keys(self) -> Tuple[Any, ...]:
-        if self._graph is None:
-            raise RuntimeError(f"_keys() called on {self.rtdname} before resource was added to graph")
-        return self.kind, self.cloud().id, self.account().id, self.region().id, self.zone().id, self.id, self.name
+        pass
 
     def region(self, graph: Optional[Any] = None) -> BaseRegion:
-        return self
+        pass
 
 
 @define(eq=False, slots=False)
@@ -964,7 +754,7 @@ class BaseZone(PhantomBaseResource):
     long_name: Optional[str] = None
 
     def zone(self, graph: Optional[Any] = None) -> BaseZone:
-        return self
+        pass
 
 
 class InstanceStatus(Enum):
@@ -1070,7 +860,7 @@ class Cloud(BaseCloud):
     _metadata: ClassVar[Dict[str, Any]] = {"icon": "cloud", "group": "management"}
 
     def delete(self, graph: Any) -> bool:
-        return False
+        pass
 
 
 @define(eq=False, slots=False)
@@ -1081,7 +871,7 @@ class GraphRoot(PhantomBaseResource):
     _metadata: ClassVar[Dict[str, Any]] = {"icon": "graph_root", "group": "management"}
 
     def delete(self, graph: Any) -> bool:
-        return False
+        pass
 
 
 @define(eq=False, slots=False)
@@ -1495,25 +1285,10 @@ class BaseDNSRecordSet(BaseResource):
         self.record_type = self.record_type.upper()
 
     def dns_zone(self, graph: Optional[Any] = None) -> "BaseDNSZone":
-        if graph is None:
-            graph = self._graph
-        dns_zone = graph.search_first_parent_class(self, BaseDNSZone) if graph else None
-        return dns_zone or UnknownDNSZone(id="undefined", tags={})
+        pass
 
     def _keys(self) -> tuple[Any, ...]:
-        if self._graph is None:
-            raise RuntimeError(f"_keys() called on {self.rtdname} before resource was added to graph")
-        return (
-            self.kind,
-            self.cloud().id,
-            self.account().id,
-            self.region().id,
-            self.zone().id,
-            self.dns_zone().id,
-            self.id,
-            self.name,
-            self.record_type,
-        )
+        pass
 
 
 @define(eq=False, slots=False)
@@ -1546,26 +1321,10 @@ class BaseDNSRecord(BaseResource):
         self.record_type = self.record_type.upper()
 
     def dns_zone(self, graph: Optional[Any] = None) -> "BaseDNSZone":
-        if graph is None:
-            graph = self._graph
-        dns_zone = graph.search_first_parent_class(self, BaseDNSZone) if graph else None
-        return dns_zone or UnknownDNSZone(id="undefined", tags={})
+        pass
 
     def _keys(self) -> tuple[Any, ...]:
-        if self._graph is None:
-            raise RuntimeError(f"_keys() called on {self.rtdname} before resource was added to graph")
-        return (
-            self.kind,
-            self.cloud().id,
-            self.account().id,
-            self.region().id,
-            self.zone().id,
-            self.dns_zone().id,
-            self.id,
-            self.name,
-            self.record_type,
-            self.record_data,
-        )
+        pass
 
 
 @define(eq=False, slots=False)
@@ -1644,7 +1403,7 @@ class UnknownCloud(BaseCloud):
     _kind_description: ClassVar[str] = "An unknown cloud."
 
     def delete(self, graph: Any) -> bool:
-        return False
+        pass
 
 
 @define(eq=False, slots=False)
@@ -1654,7 +1413,7 @@ class UnknownAccount(BaseAccount):
     _kind_description: ClassVar[str] = "An unknown account."
 
     def delete(self, graph: Any) -> bool:
-        return False
+        pass
 
 
 @define(eq=False, slots=False)
@@ -1664,7 +1423,7 @@ class UnknownRegion(BaseRegion):
     _kind_description: ClassVar[str] = "An unknown region."
 
     def delete(self, graph: Any) -> bool:
-        return False
+        pass
 
 
 @define(eq=False, slots=False)
@@ -1674,7 +1433,7 @@ class UnknownDNSZone(BaseDNSZone):
     _kind_description: ClassVar[str] = "An unknown DNS zone."
 
     def delete(self, graph: Any) -> bool:
-        return False
+        pass
 
 
 @define(eq=False, slots=False)
@@ -1684,7 +1443,7 @@ class UnknownZone(BaseZone):
     _kind_description: ClassVar[str] = "An unknown zone."
 
     def delete(self, graph: Any) -> bool:
-        return False
+        pass
 
 
 @define(eq=False, slots=False)
@@ -1694,7 +1453,7 @@ class UnknownLocation(BaseResource):
     _kind_description: ClassVar[str] = "An unknown location."
 
     def delete(self, graph: Any) -> bool:
-        return False
+        pass
 
 
 class PolicySourceKind(StrEnum):
@@ -1738,21 +1497,13 @@ class PermissionScope:
     conditions: Optional[PermissionCondition] = None
 
     def with_deny_conditions(self, deny_conditions: List[Json]) -> "PermissionScope":
-        c = self.conditions or PermissionCondition()
-        return evolve(self, conditions=evolve(c, deny=tuple([to_json_str(c) for c in deny_conditions])))
+        pass
 
     def with_boundary_conditions(self, boundary_conditions: List[Json]) -> "PermissionScope":
-        c = self.conditions or PermissionCondition()
-        return evolve(self, conditions=evolve(c, boundary=tuple([to_json_str(c) for c in boundary_conditions])))
+        pass
 
     def has_no_condititons(self) -> bool:
-        if self.conditions is None:
-            return True
-
-        if self.conditions.allow is None and self.conditions.boundary is None and self.conditions.deny is None:
-            return True
-
-        return False
+        pass
 
 
 class PermissionLevel(StrEnum):

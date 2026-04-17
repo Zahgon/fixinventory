@@ -189,14 +189,7 @@ class Stream(Generic[T], AsyncIterator[T]):
         return await anext(self.iterator)
 
     def filter(self, fn: Callable[[T], DirectOrAwaitable[bool]]) -> Stream[T]:
-        async def gen() -> AsyncIterator[T]:
-            async for item in self:
-                af = fn(item)
-                flag = await af if isinstance(af, Awaitable) else af
-                if flag:
-                    yield item
-
-        return Stream(gen())
+        pass
 
     def starmap(
         self,
@@ -204,7 +197,7 @@ class Stream(Generic[T], AsyncIterator[T]):
         task_limit: Optional[int] = None,
         ordered: bool = True,
     ) -> Stream[R]:
-        return self.map(lambda args: fn(*args), task_limit, ordered)  # type: ignore
+        pass
 
     def map(
         self,
@@ -212,14 +205,7 @@ class Stream(Generic[T], AsyncIterator[T]):
         task_limit: Optional[int] = None,
         ordered: bool = True,
     ) -> Stream[R]:
-        async def gen() -> AsyncIterator[IterOrAsyncIter[DirectOrAwaitable[R]]]:
-            async for item in self:
-                res = fn(item)
-                yield [res]
-
-        # in the case of a synchronous function, task_limit is ignored
-        task_limit = task_limit if asyncio.iscoroutinefunction(fn) else 1
-        return Stream(_flatmap(gen(), task_limit, ordered))
+        pass
 
     def flatmap(
         self,
@@ -242,78 +228,25 @@ class Stream(Generic[T], AsyncIterator[T]):
         return self.flatmap(lambda x: x, task_limit, ordered)
 
     def skip(self, num: int) -> Stream[T]:
-        async def gen() -> AsyncIterator[T]:
-            count = 0
-            async for item in self:
-                if count < num:
-                    count += 1
-                    continue
-                yield item
-
-        return Stream(gen())
+        pass
 
     def take(self, num: int) -> Stream[T]:
-        async def gen() -> AsyncIterator[T]:
-            count = 0
-            async for item in self:
-                if count >= num:
-                    break
-                yield item
-                count += 1
-
-        return Stream(gen())
+        pass
 
     def take_last(self, num: int) -> Stream[T]:
-        async def gen() -> AsyncIterator[T]:
-            queue: deque[T] = deque(maxlen=num)
-            async for item in self:
-                queue.append(item)
-            for item in queue:
-                yield item
-
-        return Stream(gen())
+        pass
 
     def enumerate(self) -> Stream[Tuple[int, T]]:
-        async def gen() -> AsyncIterator[Tuple[int, T]]:
-            i = 0
-            async for item in self:
-                yield i, item
-                i += 1
-
-        return Stream(gen())
+        pass
 
     def chunks(self, num: int) -> Stream[List[T]]:
-        async def gen() -> AsyncIterator[List[T]]:
-            while True:
-                chunk_items: List[T] = []
-                try:
-                    for _ in range(num):
-                        item = await anext(self.iterator)
-                        chunk_items.append(item)
-                    yield chunk_items
-                except StopAsyncIteration:
-                    if chunk_items:
-                        yield chunk_items
-                    break
-
-        return Stream(gen())
+        pass
 
     def flatten(self) -> Stream[T]:
-        async def gen() -> AsyncIterator[T]:
-            async for item in self:
-                if isinstance(item, AsyncIterator) or hasattr(item, "__aiter__"):
-                    async for subitem in item:
-                        yield subitem
-                elif isinstance(item, Iterable):
-                    for subitem in item:
-                        yield subitem
-                else:
-                    yield item
-
-        return Stream(gen())
+        pass
 
     async def collect(self) -> List[T]:
-        return [item async for item in self]
+        pass
 
     @staticmethod
     def just(x: T | Awaitable[T]) -> Stream[T]:
@@ -327,12 +260,7 @@ class Stream(Generic[T], AsyncIterator[T]):
 
     @staticmethod
     def iterate(x: Iterable[T] | AsyncIterable[T] | AsyncIterator[T]) -> Stream[T]:
-        if isinstance(x, AsyncIterator):
-            return Stream(x)
-        elif isinstance(x, AsyncIterable):
-            return Stream(aiter(x))
-        else:
-            return Stream(_async_iter(x))
+        pass
 
     @staticmethod
     def empty() -> Stream[T]:
@@ -344,30 +272,12 @@ class Stream(Generic[T], AsyncIterator[T]):
 
     @staticmethod
     def for_ever(fn: Callable[P, Awaitable[R]] | Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> Stream[T]:
-        async def gen() -> AsyncIterator[T]:
-            while True:
-                if asyncio.iscoroutinefunction(fn):
-                    yield await fn(*args, **kwargs)
-                else:
-                    yield fn(*args, **kwargs)  # type: ignore
-
-        return Stream(gen())
+        pass
 
     @staticmethod
     def call(fn: Callable[P, Awaitable[R]] | Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> Stream[R]:
-        async def gen() -> AsyncIterator[R]:
-            if asyncio.iscoroutinefunction(fn):
-                yield await fn(*args, **kwargs)
-            else:
-                yield fn(*args, **kwargs)  # type: ignore
-
-        return Stream(gen())
+        pass
 
     @staticmethod
     async def as_list(x: Iterable[T] | AsyncIterable[T] | AsyncIterator[T]) -> List[T]:
-        if isinstance(x, AsyncIterator):
-            return [item async for item in x]
-        elif isinstance(x, AsyncIterable):
-            return [item async for item in aiter(x)]
-        else:
-            return [item for item in x]
+        pass

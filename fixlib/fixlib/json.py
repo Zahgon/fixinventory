@@ -57,12 +57,7 @@ def is_primitive_or_primitive_union(t: Any) -> bool:
 
 # allow timedelta either as number of seconds or as duration string
 def timedelta_from_json(js: Any) -> timedelta:
-    if isinstance(js, str):
-        return parse_duration(js)
-    elif isinstance(js, (int, float)):
-        return timedelta(seconds=js)
-    else:
-        raise ValueError(f"Cannot convert {js} to timedelta")
+    pass
 
 
 __converter.register_structure_hook_func(is_primitive_or_primitive_union, lambda v, ty: v)
@@ -157,48 +152,15 @@ def value_in_path(element: JsonElement, path_or_name: Union[List[str], str]) -> 
     {"a": {"b": {"c": 1}}} -> value_in_path({"a": {"b": {"c": 1}}}, ["a", "b", "c"]) -> 1
     The path can be defined as a list of strings or as a string with dots as separator.
     """
-    path = path_or_name if isinstance(path_or_name, list) else path_or_name.split(".")
-    at = len(path)
-
-    def at_idx(current: JsonElement, idx: int) -> Optional[Any]:
-        if at == idx:
-            return current
-        elif current is None or not isinstance(current, dict) or path[idx] not in current:
-            return None
-        else:
-            return at_idx(current[path[idx]], idx + 1)
-
-    return at_idx(element, 0)
+    pass
 
 
 def set_value_in_path(element: JsonElement, path_or_name: Union[List[str], str], js: Optional[Json] = None) -> Json:
-    path = path_or_name if isinstance(path_or_name, list) else path_or_name.split(".")
-    at = len(path) - 1
-
-    def at_idx(current: Json, idx: int) -> None:
-        if at == idx:
-            current[path[-1]] = element
-        else:
-            value = current.get(path[idx])
-            if not isinstance(value, dict):
-                value = {}
-                current[path[idx]] = value
-            at_idx(value, idx + 1)
-
-    js = js if js is not None else {}
-    at_idx(js, 0)
-    return js
+    pass
 
 
 def is_empty(js: JsonElement) -> bool:
-    if js is None:
-        return True
-    elif isinstance(js, dict):
-        return all(is_empty(v) for v in js.values())
-    elif isinstance(js, list):
-        return all(is_empty(v) for v in js)
-    else:
-        return False
+    pass
 
 
 def sort_json(js_object: Json, *, sort_list: bool = False) -> Json:

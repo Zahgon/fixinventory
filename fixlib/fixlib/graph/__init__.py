@@ -114,20 +114,7 @@ class Graph(networkx.MultiDiGraph):  # type: ignore
         If the other graph has a graph.root an edge will be created between
         it and our own graph root.
         """
-        if isinstance(self.root, BaseResource) and isinstance(getattr(graph, "root", None), BaseResource):
-            log.debug(f"Merging graph of {graph.root.kdname} into graph of {self.root.kdname}")  # type: ignore
-            self.add_edge(self.root, graph.root)  # type: ignore
-        else:
-            log.warning("Merging graphs with no valid roots")
-
-        try:
-            self._log_edge_creation = False
-            self.update(edges=graph.edges(keys=True, data=True), nodes=graph.nodes)
-            self.deferred_edges.extend(graph.deferred_edges)
-        finally:
-            self._log_edge_creation = True
-        if not skip_deferred_edges:
-            self.resolve_deferred_connections()
+        pass
 
     def add_resource(
         self,
@@ -153,10 +140,7 @@ class Graph(networkx.MultiDiGraph):  # type: ignore
         Attributes can also be used in graph searches to find nodes matching certain
         attributes.
         """
-        resource_attr = get_resource_attributes(node_for_adding)
-
-        self.add_node(node_for_adding, label=node_for_adding.name, **resource_attr, **attr)
-        self.add_edge(src=parent, dst=node_for_adding, edge_type=edge_type)
+        pass
 
     def add_node(self, node_for_adding: BaseResource, **attr: Any) -> None:
         if self.max_nodes is not None and len(self.nodes()) >= self.max_nodes:
@@ -168,11 +152,7 @@ class Graph(networkx.MultiDiGraph):  # type: ignore
             node_for_adding._graph = self
 
     def remove_recursively(self, nodes: Iterable[Any]) -> None:
-        remove_nodes = set()
-        for node in nodes:
-            remove_nodes.add(node)
-            remove_nodes.update(self.successors(node))
-        self.remove_nodes_from(remove_nodes)
+        pass
 
     def has_edge(
         self, src: BaseResource, dst: BaseResource, key: Optional[EdgeKey] = None, edge_type: Optional[EdgeType] = None
@@ -219,7 +199,7 @@ class Graph(networkx.MultiDiGraph):  # type: ignore
         return return_key  # type: ignore
 
     def add_deferred_edge(self, src: NodeSelector, dst: NodeSelector, edge_type: EdgeType = EdgeType.default) -> None:
-        self.deferred_edges.append((src, dst, edge_type))
+        pass
 
     def remove_node(self, node: BaseResource) -> None:
         super().remove_node(node)
@@ -254,21 +234,13 @@ class Graph(networkx.MultiDiGraph):  # type: ignore
                 yield successor
 
     def ancestors(self, node: BaseResource, edge_type: Optional[EdgeType] = None) -> Iterator[BaseResource]:
-        return networkx.algorithms.dag.ancestors(self.edge_type_subgraph(edge_type), node)  # type: ignore
+        pass
 
     def descendants(self, node: BaseResource, edge_type: Optional[EdgeType] = None) -> Iterator[BaseResource]:
-        return networkx.algorithms.dag.descendants(self.edge_type_subgraph(edge_type), node)  # type: ignore
+        pass
 
     def edge_type_subgraph(self, edge_type: Optional[EdgeType] = None) -> networkx.Graph:
-        if edge_type is None:
-            edge_type = EdgeType.default
-        edges = []
-        for edge in self.edges(keys=True):
-            if len(edge) == 3:
-                key: EdgeKey = edge[2]
-                if key.edge_type == edge_type:
-                    edges.append(edge)
-        return self.edge_subgraph(edges)
+        pass
 
     def is_acyclic_per_edge_type(self) -> bool:
         """
@@ -276,52 +248,24 @@ class Graph(networkx.MultiDiGraph):  # type: ignore
         This means it is valid if there are cycles in the graph but not for the same edge type.
         :return: True if the graph is acyclic for all edge types, otherwise False.
         """
-        log.debug("Ensuring graph is directed and acyclic per edge type")
-        return True if self.find_cycle() is None else False
+        pass
 
     def find_cycle(self) -> Optional[List[EdgeKey]]:
         """
         Returns the first cycle found in the graph per edge type.
         :return: first cycle found in the graph per edge type, or None if no cycles are found.
         """
-        edges_per_type = defaultdict(list)
-        for edge in self.edges(keys=True):
-            if len(edge) == 3:
-                key: EdgeKey = edge[2]
-
-                # skip iam edges, they're checked by the collector
-                if key.edge_type == EdgeType.iam:
-                    continue
-
-                edges_per_type[key.edge_type].append(edge)
-        for edges in edges_per_type.values():
-            typed_graph = self.edge_subgraph(edges)
-            if not is_directed_acyclic_graph(typed_graph):
-                return [edge[2] for edge in networkx.algorithms.cycles.find_cycle(typed_graph)]
-        return None
+        pass
 
     @metrics_graph_search.time()
     def search(self, attr: str, value: Any, regex_search: bool = False) -> Iterator[BaseResource]:
         """Search for graph nodes by their attribute value"""
-        if value is not None:
-            log.debug(f"Searching graph for nodes with attribute values {attr}: {value}" f" (regex: {regex_search})")
-            for node in self.nodes():
-                node_attr = getattr(node, attr, None)
-                if (
-                    node_attr is not None
-                    and not callable(node_attr)
-                    and (
-                        (regex_search is False and node_attr == value)
-                        or (regex_search is True and re.search(value, str(node_attr)))
-                    )
-                ):
-                    yield node
+        pass
 
     @metrics_graph_searchre.time()
     def searchre(self, attr: str, regex: str) -> Iterator[BaseResource]:
         """Regex search for graph nodes by their attribute value"""
-        log.debug(f"Regex searching graph for nodes with attribute values {attr}: {regex}")
-        yield from self.search(attr, regex, regex_search=True)
+        pass
 
     @metrics_graph_searchall.time()
     def searchall(self, match: Dict[str, Any]) -> Iterator[BaseResource]:
@@ -333,12 +277,7 @@ class Graph(networkx.MultiDiGraph):  # type: ignore
     @metrics_graph_search_first.time()
     def search_first(self, attr: str, value: Any) -> Optional[BaseResource]:
         """Return the first graph node that matches a certain attribute value"""
-        node = next(iter(self.search(attr, value)), None)
-        if node:
-            log.debug(f"Found node {node} with {attr}: {value}")
-        else:
-            log.debug(f"Found no node with {attr}: {value}")
-        return node  # type
+        pass
 
     @metrics_graph_search_first_all.time()
     def search_first_all(self, match: Dict[str, Any]) -> Optional[BaseResource]:
@@ -357,17 +296,7 @@ class Graph(networkx.MultiDiGraph):  # type: ignore
         This is being used to search up the graph and e.g. find the account that the
         graph node is a member of.
         """
-        queue = deque(self.predecessors(node))
-        already_checked = set(self.predecessors(node))
-        while queue:
-            current = queue.popleft()
-            if isinstance(current, cls):
-                return current
-            for n in self.predecessors(current):
-                if n not in already_checked:
-                    already_checked.add(n)
-                    queue.append(n)
-        return None
+        pass
 
     @metrics_graph_resolve_deferred_connections.time()
     def resolve_deferred_connections(self) -> None:
@@ -377,10 +306,10 @@ class Graph(networkx.MultiDiGraph):  # type: ignore
                 node.resolve_deferred_connections(self)
 
     def export_model(self, **kwargs: Any) -> List[Json]:
-        return export_model(graph=self, **kwargs)
+        pass
 
     def export_iterator(self) -> GraphExportIterator:
-        return GraphExportIterator(self)
+        pass
 
 
 def resource_classes_to_fixcore_model(classes: Set[Type[Any]], **kwargs: Any) -> List[Json]:
@@ -403,25 +332,7 @@ def resource_classes_to_fixcore_model(classes: Set[Type[Any]], **kwargs: Any) ->
 
 def export_model(graph: Optional[Graph] = None, **kwargs: Any) -> List[Json]:
     """Return the graph node dataclass model in fixcore format"""
-    classes = set()
-    if graph is None:
-        classes.add(BaseResource)
-    else:
-        for node in graph.nodes:
-            classes.add(type(node))
-
-    model = resource_classes_to_fixcore_model(classes, aggregate_root=BaseResource, **kwargs)
-    for resource_model in model:
-        if resource_model.get("fqn") == "resource":
-            resource_model.get("properties", []).append(
-                {
-                    "name": "kind",
-                    "kind": "string",
-                    "required": True,
-                    "description": "",
-                }
-            )
-    return model
+    pass
 
 
 @lru_cache(maxsize=4096)  # Only resolve types once per type
@@ -629,66 +540,4 @@ class GraphExportIterator:
         )
 
     def export_graph(self) -> None:
-        with self.export_lock:
-            start_time = time()
-            for node in self.graph.nodes:
-                node_dict = node_to_dict(node)
-                if isinstance(node, self.graph_merge_kind):
-                    log.debug(f"Replacing sub graph below {node.kdname}")
-                    if "metadata" not in node_dict or not isinstance(node_dict["metadata"], dict):
-                        node_dict["metadata"] = {}
-                    node_dict["metadata"]["replace"] = True
-                    self.found_replace_node = True
-                if isinstance(node, BaseAccount):
-                    log.debug(f"Setting export time on {node.kdname}")
-                    if "metadata" not in node_dict or not isinstance(node_dict["metadata"], dict):
-                        node_dict["metadata"] = {}
-                    node_dict["metadata"]["exported_at"] = utc_str()
-                node_json = to_json_str(node_dict) + "\n"
-                self.tempfile.write(node_json.encode())
-                self.total_lines += 1
-            elapsed_nodes = time() - start_time
-            log.debug(f"Exported {self.number_of_nodes} nodes in {elapsed_nodes:.4f}s")
-            if not self.found_replace_node:
-                log.warning(f"No nodes of kind {self.graph_merge_kind.kind} found in graph")
-            start_time = time()
-            for from_node, to_node, key, data in self.graph.edges(keys=True, data=True):
-                if not isinstance(from_node, BaseResource) or not isinstance(to_node, BaseResource):
-                    log.error(f"One of {from_node} and {to_node} is no base resource")
-                    continue
-                edge_dict = {"from": from_node.chksum, "to": to_node.chksum}
-                if key:
-                    if isinstance(key, EdgeKey) and key.edge_type != EdgeType.default:
-                        edge_dict["edge_type"] = key.edge_type.value
-
-                if reported := data.get("reported"):
-                    edge_dict["reported"] = reported
-
-                edge_json = json.dumps(edge_dict) + "\n"
-                self.tempfile.write(edge_json.encode())
-                self.total_lines += 1
-            for from_selector, to_selector, edge_type in self.graph.deferred_edges:
-                deferred_edge_dict: Json = {}
-                if isinstance(from_selector, ByNodeId):
-                    deferred_edge_dict["from_selector"] = {"node_id": from_selector.value}
-                else:
-                    deferred_edge_dict["from_selector"] = {"search_criteria": from_selector.query}
-                if isinstance(to_selector, ByNodeId):
-                    deferred_edge_dict["to_selector"] = {"node_id": to_selector.value}
-                else:
-                    deferred_edge_dict["to_selector"] = {"search_criteria": to_selector.query}
-                deferred_edge_dict["edge_type"] = edge_type.value
-                deferred_edge_json = json.dumps(deferred_edge_dict) + "\n"
-                self.tempfile.write(deferred_edge_json.encode())
-                self.total_lines += 1
-            elapsed_edges = time() - start_time
-            log.debug(f"Exported {self.number_of_edges} edges in {elapsed_edges:.4f}s")
-            elapsed = elapsed_nodes + elapsed_edges
-            log.info(f"Exported {self.total_lines} nodes and edges in {elapsed:.4f}s")
-            self.graph_exported = True
-            # The graph uses attributes with @cached_property.
-            # Those attributes reference the graph and increment the refcount.
-            # See: https://github.com/networkx/networkx/issues/6235
-            unset_cached_properties(self.graph)
-            del self.graph
-            self.tempfile.seek(0)
+        pass

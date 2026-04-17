@@ -29,13 +29,7 @@ class ConfigNotFoundError(AttributeError):
 def get_configs(
     fixcore_uri: Optional[str] = None, psk: Optional[str] = None, verify: Optional[str] = None
 ) -> List[Json]:
-    fixcore_uri, psk, headers = default_args(fixcore_uri, psk)
-
-    log.debug("Getting configs")
-    r = requests.get(f"{fixcore_uri}/configs", headers=headers, verify=verify)
-    if r.status_code == 200:
-        return cast(List[Json], r.json())
-    raise RuntimeError(f"Error getting configs: {r.content.decode('utf-8')}")
+    pass
 
 
 def get_config(
@@ -97,13 +91,7 @@ def delete_config(
     psk: Optional[str] = None,
     verify: Union[str, bool, None] = None,
 ) -> bool:
-    fixcore_uri, psk, headers = default_args(fixcore_uri, psk)
-
-    log.debug(f"Deleting config {config_id}")
-    r = requests.delete(f"{fixcore_uri}/config/{config_id}", headers=headers, verify=verify)
-    if r.status_code == 204:
-        return True
-    raise RuntimeError(f"Error deleting config {config_id}: {r.content.decode('utf-8')}")
+    pass
 
 
 def update_config_model(

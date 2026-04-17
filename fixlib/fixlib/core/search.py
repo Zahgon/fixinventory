@@ -47,15 +47,7 @@ class CoreGraph:
         return self.post(execute_endpoint, command, headers, verify=self.verify)
 
     def search(self, search: str, edge_type: Optional[EdgeType] = None, section: str = "reported") -> Iterator[Json]:
-        log.debug(f"Sending search {search}")
-        headers = {"Accept": "application/x-ndjson"}
-        search_endpoint = self.search_uri
-        query = {"section": section}
-        if edge_type is not None:
-            query["edge_type"] = edge_type.value
-        query_string = urlencode(query)
-        search_endpoint += f"?{query_string}"
-        return self.post(search_endpoint, search, headers, verify=self.verify)
+        pass
 
     @staticmethod
     def post(uri: str, data: str, headers: Dict[str, str], verify: Optional[str] = None) -> Iterator[Json]:
@@ -76,52 +68,10 @@ class CoreGraph:
                 continue
 
     def graph(self, search: str) -> Graph:
-        def process_data_line(data: Json, graph: Graph) -> None:
-            """Process a single line of fixcore graph data"""
-
-            if data.get("type") == "node":
-                node_id = data.get("id")
-                node = node_from_dict(data)
-                node_mapping[node_id] = node
-                log.debug(f"Adding node {node} to the graph")
-                graph.add_node(node)
-                if node.kind == "graph_root":
-                    log.debug(f"Setting graph root {node}")
-                    graph.root = node
-            elif data.get("type") == "edge":
-                node_from = data.get("from")
-                node_to = data.get("to")
-                edge_type = EdgeType.from_value(data.get("edge_type"))
-                if node_from not in node_mapping or node_to not in node_mapping:
-                    raise ValueError(f"One of {node_from} -> {node_to} unknown")
-                graph.add_edge(node_mapping[node_from], node_mapping[node_to], edge_type=edge_type)
-
-        graph = Graph()
-        node_mapping: Dict[Any, Any] = {}
-        for data in self.search(search):
-            try:
-                process_data_line(data, graph)
-            except ValueError as e:
-                log.error(e)
-                continue
-        sanitize(graph)
-        return graph
+        pass
 
     def patch_nodes(self, graph: Graph) -> None:
-        headers = {"Content-Type": "application/x-ndjson"}
-        if getattr(ArgumentParser.args, "psk", None):
-            encode_jwt_to_headers(headers, {}, ArgumentParser.args.psk)
-
-        r = requests.patch(
-            f"{self.graph_uri}/nodes",
-            data=GraphChangeIterator(graph),
-            headers=headers,
-            verify=self.verify,
-        )
-        if r.status_code != 200:
-            err = r.content.decode("utf-8")
-            log.error(err)
-            raise RuntimeError(f"Failed to patch nodes: {err}")
+        pass
 
 
 class GraphChangeIterator:

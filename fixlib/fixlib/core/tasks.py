@@ -64,45 +64,11 @@ class CoreTaskHandler:
         return all((attrs.get(n) in f) for n, f in self.filter.items())
 
     def core_json(self) -> Json:
-        return {
-            "name": self.name,
-            "info": self.info,
-            "description": self.description,
-            "filter": self.filter,
-            "expect_node_result": self.expect_node_result,
-            "args_description": self.args_description,
-            "allowed_on_kind": self.allowed_on_kind,
-        }
+        pass
 
     @staticmethod
     def from_definition(target: Any, wtd: CommandDefinition) -> CoreTaskHandler:
-        def handle_message(message: Json) -> JsonElement:
-            node_data = message.get("node", {})
-            args = message.get("args", [])
-            return wtd.fn(target, current_config(), node_data, args)  # type: ignore
-
-        def handle_resource(message: Json) -> JsonElement:
-            node_data = message.get("node", {})
-            node = node_from_dict(node_data, include_select_ancestors=True) if node_data else None
-            args = message.get("args", [])
-            result = wtd.fn(target, current_config(), node, args)
-            # expect either a base resource or json element as result
-            if isinstance(result, BaseResource):
-                return node_to_dict(result)
-            else:
-                return result  # type: ignore
-
-        to_call = handle_resource if wtd.expect_resource else handle_message
-        return CoreTaskHandler(
-            name=wtd.name,
-            info=wtd.info,
-            args_description=wtd.args_description,
-            description=wtd.description,
-            filter=wtd.filter,
-            expect_node_result=wtd.expect_node_result,
-            allowed_on_kind=wtd.allowed_on_kind,
-            handler=to_call,
-        )
+        pass
 
 
 class CoreTasks(threading.Thread):
@@ -126,25 +92,13 @@ class CoreTasks(threading.Thread):
         self.__connected = False
 
     def connected(self) -> bool:
-        return self.__connected
+        pass
 
     def __del__(self) -> None:
         remove_event_listener(EventType.SHUTDOWN, self.shutdown)
 
     def run(self) -> None:
-        self.name = self.identifier
-        add_event_listener(EventType.SHUTDOWN, self.shutdown)
-
-        for i in range(self.max_workers):
-            threading.Thread(target=self.worker, daemon=True, name=f"worker-{i}").start()
-
-        while not self.shutdown_event.is_set():
-            log.debug("Connecting to fixcore task queue")
-            try:
-                self.connect()
-            except Exception as e:
-                log.error(e)
-            time.sleep(1)
+        pass
 
     def worker(self) -> None:
         while not self.shutdown_event.is_set():
@@ -191,35 +145,22 @@ class CoreTasks(threading.Thread):
         self.ws.run_forever(sslopt=sslopt, ping_interval=20, ping_timeout=10, ping_payload="ping")
 
     def shutdown(self, _: Optional[Event] = None) -> None:
-        log.debug("Received shutdown event - shutting down fixcore task queue listener")
-        self.shutdown_event.set()
-        if self.ws:
-            self.ws.close()
+        pass
 
     def on_message(self, _: WebSocket, message: str) -> None:
-        try:
-            jsom_message: Json = json.loads(message)
-        except json.JSONDecodeError:
-            log.exception(f"Unable to decode received message {message}")
-            return
-        self.queue.put(jsom_message)
+        pass
 
     def on_error(self, _: WebSocket, e: Exception) -> None:
-        log.debug(f"{self.identifier} event bus error: {e!r}")
+        pass
 
     def on_close(self, _: WebSocket, close_status_code: int, close_msg: str) -> None:
-        self.__connected = False
-        log.debug(f"{self.identifier} disconnected from fixcore task queue")
+        pass
 
     def on_open(self, ws: WebSocket) -> None:
-        self.__connected = True
-        log.debug(f"{self.identifier} connected to fixcore, register at task queue")
-        # when we are connected, we register at the task queue
-        # by sending all task handler definitions
-        ws.send(json.dumps([handler.core_json() for handler in self.task_handler]))
+        pass
 
     def on_ping(self, _: WebSocket, message: str) -> None:
-        log.debug(f"{self.identifier} tasks ping from fixcore message bus")
+        pass
 
     def on_pong(self, _: WebSocket, message: str) -> None:
-        log.debug(f"{self.identifier} tasks pong from fixcore message bus")
+        pass

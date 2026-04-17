@@ -34,21 +34,10 @@ class CoreFeedback:
     context: List[str] = field(factory=list)
 
     def progress_done(self, name: str, current: int, total: int, context: Optional[List[str]] = None) -> None:
-        self.progress(ProgressDone(name, current, total, path=context or self.context))
+        pass
 
     def progress(self, progress: Progress) -> None:
-        message = {
-            "kind": "action_progress",
-            "message_type": self.message_type,
-            "data": {
-                "task": self.task_id,
-                "step": self.step_name,
-                "context": self.context,
-                "progress": progress.to_json(),
-                "at": utc_str(),
-            },
-        }
-        self.core_messages.put(message)
+        pass
 
     def info(self, message: str, logger: Optional[Logger] = None) -> None:
         if logger:
@@ -62,7 +51,7 @@ class CoreFeedback:
 
     @property
     def context_str(self) -> str:
-        return "[" + (":".join(self.context)) + "] " if self.context else ""
+        pass
 
     def _info_message(self, level: str, message: str) -> None:
         self.core_messages.put(
@@ -79,10 +68,10 @@ class CoreFeedback:
         )
 
     def with_context(self, *context: str) -> "CoreFeedback":
-        return evolve(self, context=list(context))
+        pass
 
     def child_context(self, *context: str) -> "CoreFeedback":
-        return self.with_context(*(self.context + list(context)))
+        pass
 
 
 @define
@@ -101,43 +90,13 @@ class ErrorAccumulator:
     def add_error(
         self, as_info: bool, error_kind: str, service: str, action: str, message: str, region: Optional[str] = None
     ) -> None:
-        if region not in self.regional_errors:
-            self.regional_errors[region] = {}
-        regional_errors = self.regional_errors[region]
-
-        key = f"{error_kind}:{message}:{as_info}"
-        if key not in regional_errors:
-            regional_errors[key] = ErrorSummary(error_kind, message, as_info, region, {service: {action}})
-        else:
-            summary = regional_errors[key]
-            if service not in summary.service_actions:
-                summary.service_actions[service] = {action}
-            else:
-                summary.service_actions[service].add(action)
+        pass
 
     def report_region(self, core_feedback: CoreFeedback, region: Optional[str]) -> None:
-        if regional_errors := self.regional_errors.get(region):
-            # reset errors for this region
-            self.regional_errors[region] = {}
-            # add region as context
-            feedback = core_feedback.child_context(region) if region else core_feedback
-            # send to core
-            for err in regional_errors.values():
-                srv_acts = []
-                for service, actions in islice(err.service_actions.items(), 10):
-                    suffix = " and more" if len(actions) > 3 else ""
-                    srv_acts.append(service + ": " + ", ".join(islice(actions, 3)) + suffix)
-                message = f"[{err.error}] {err.message} Services and actions affected: {', '.join(srv_acts)}"
-                if len(err.service_actions) > 10:
-                    message += " and more..."
-                if err.info:
-                    feedback.info(message)
-                else:
-                    feedback.error(message)
+        pass
 
     def report_all(self, core_feedback: CoreFeedback) -> None:
-        for region in self.regional_errors.keys():
-            self.report_region(core_feedback, region)
+        pass
 
 
 class SuppressWithFeedback(AbstractContextManager[None]):
@@ -180,34 +139,13 @@ class CoreActions(threading.Thread):
         self.__connected = False
 
     def connected(self) -> bool:
-        return self.__connected
+        pass
 
     def run(self) -> None:
-        def listen_on_queue(in_messages: Queue[Json]) -> None:
-            while not self.shutdown_event.is_set():
-                with suppress(Exception):
-                    message = in_messages.get(timeout=1)
-                    log.debug("Got feedback message. Send it to core", message)
-                    if self.ws:
-                        self.ws.send(json.dumps(message))
-
-        self.name = self.identifier
-        add_event_listener(EventType.SHUTDOWN, self.shutdown)
-        if self.incoming_messages:
-            self.executor.submit(listen_on_queue, self.incoming_messages)
-        while not self.shutdown_event.is_set():
-            log.debug("Connecting to fixcore message bus")
-            try:
-                self.connect()
-            except Exception as e:
-                log.error(e)
-            time.sleep(1)
+        pass
 
     def wait_for_ws(self, timeout: int = 10) -> bool:
-        start = time.time()
-        while self.ws is None and time.time() - start < timeout and not self.shutdown_event.is_set():
-            time.sleep(0.1)
-        return self.ws is not None
+        pass
 
     def connect(self) -> None:
         for event, data in self.actions.items():
@@ -239,20 +177,14 @@ class CoreActions(threading.Thread):
             self.ws = None
 
     def shutdown(self, _: Optional[Event] = None) -> None:
-        remove_event_listener(EventType.SHUTDOWN, self.shutdown)
-        log.debug("Received shutdown event - shutting down fixcore message bus listener")
-        self.shutdown_event.set()
-        self.executor.shutdown(wait=False, cancel_futures=True)
-        if self.ws:
-            self.ws.close()
+        pass
 
     def register(self, action: str, data: Optional[Dict[str, str]] = None) -> bool:
         log.debug(f"{self.identifier} registering for {action} actions ({data})")
         return self.registration(action, requests.post, data)
 
     def unregister(self, action: str, data: Optional[Dict[str, str]] = None) -> bool:
-        log.debug(f"{self.identifier} unregistering from {action} actions ({data})")
-        return self.registration(action, requests.delete, data)
+        pass
 
     def registration(
         self,
@@ -276,50 +208,26 @@ class CoreActions(threading.Thread):
         return True
 
     def on_message(self, _: WebSocket, message: str) -> None:
-        self.executor.submit(self.process_message, message)
+        pass
 
     def process_message(self, message: str) -> None:
-        try:
-            json_message: Json = json.loads(message)
-        except json.JSONDecodeError:
-            log.exception(f"Unable to decode received message {message}")
-            return
-        log.debug(f"{self.identifier} received: {message}")
-        if self.message_processor is not None and callable(self.message_processor):
-            try:
-                result: Json = self.message_processor(json_message)
-                if result is None:
-                    return
-                if self.wait_for_ws() and self.ws:
-                    log.debug(f"Sending reply {result}")
-                    self.ws.send(json.dumps(result))
-                else:
-                    log.error(f"Unable to send reply {result}")
-            except Exception:
-                log.exception(f"Something went wrong while processing {message}")
+        pass
 
     def on_error(self, _: WebSocket, e: Exception) -> None:
-        log.debug(f"{self.identifier} message bus error: {e!r}")
+        pass
 
     def on_close(self, _: WebSocket, close_status_code: int, close_msg: str) -> None:
-        self.__connected = False
-        log.debug(f"{self.identifier} disconnected from fixcore message bus: {close_status_code}: {close_msg}")
+        pass
 
     def on_open(self, _: WebSocket) -> None:
-        self.__connected = True
-        log.debug(f"{self.identifier} connected to fixcore message bus")
+        pass
 
     def on_ping(self, _: WebSocket, message: str) -> None:
-        log.debug(f"{self.identifier} actions ping from fixcore message bus")
+        pass
 
     def on_pong(self, _: WebSocket, message: str) -> None:
-        log.debug(f"{self.identifier} actions pong from fixcore message bus")
+        pass
 
     @staticmethod
     def add_args(arg_parser: ArgumentParser) -> None:
-        arg_parser.add_argument(
-            "--fixcore-subscriber-id",
-            help="fixcore actions subscriber identifier (default: worker)",
-            default="worker",
-            dest="fixcore_subscriber_id",
-        )
+        pass

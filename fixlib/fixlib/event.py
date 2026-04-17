@@ -150,11 +150,4 @@ def remove_event_listener(event_type: EventType, listener: Callable[[Event], Non
 
 
 def list_event_listeners() -> Iterable[str]:
-    with _events_lock.read_access:
-        for event_type, listeners in _events.items():
-            for listener, listener_data in listeners.items():
-                yield (
-                    f"{event_type.name}: {listener}, "
-                    f"blocking: {listener_data['blocking']}, "
-                    f"one-shot: {listener_data['one-shot']}"
-                )
+    pass

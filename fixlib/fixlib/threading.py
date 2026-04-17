@@ -29,14 +29,11 @@ class GatherFutures:
             future.add_done_callback(self._on_future_done)
 
     def _on_future_done(self, _: Future[Any]) -> None:
-        with self._lock:
-            self._to_wait -= 1
-            if self._to_wait == 0:
-                self._when_done.set_result(None)
+        pass
 
     @staticmethod
     def all(futures: List[Future[Any]]) -> Future[None]:
-        return GatherFutures(futures)._when_done
+        pass
 
 
 @define
@@ -77,15 +74,10 @@ class ExecutorQueue:
     _task_finished: Event = Event()
 
     def submit_work(self, key: Any, fn: Callable[..., T], *args: Any, **kwargs: Any) -> Future[T]:
-        future = Future[T]()
-        task = ExecutorQueueTask(key=key, fn=fn, args=args, kwargs=kwargs, future=future)  # type: ignore
-        self.__append_work(task)
-        return future
+        pass
 
     def __append_work(self, task: ExecutorQueueTask) -> None:
-        with self._tasks_lock:
-            self._tasks[task.key].appendleft(task)
-            self.__check_queue(task.key)
+        pass
 
     def __check_queue(self, key: Any) -> None:
         # note: this method is not thread safe, it should only be called from within a lock
@@ -138,27 +130,4 @@ class ExecutorQueue:
 
     def wait_for_submitted_work(self) -> None:
         # wait until all futures are complete
-        to_wait = []
-
-        # step 1: wait until all tasks are committed to the executor
-        while True:
-            with self._tasks_lock:
-                ip = reduce(lambda x, y: x + y, self._in_progress.values(), 0)
-                if ip == 0:
-                    to_wait = self._futures
-                    self._futures = []
-                    break
-                else:
-                    # safe inside the lock. clear this event and check when next task is done
-                    self._task_finished.clear()
-            self._task_finished.wait()
-
-        # step 2: wait for all tasks to complete
-        for future in concurrent.futures.as_completed(to_wait):
-            try:
-                future.result()
-            except CancelOnFirstError:
-                pass
-            except Exception as ex:
-                log.exception(f"Unhandled exception in {self.name}: {ex}")
-                raise
+        pass

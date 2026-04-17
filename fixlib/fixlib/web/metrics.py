@@ -25,18 +25,9 @@ class WebApp:
     @cherrypy.expose
     @cherrypy.tools.allow(methods=["GET"])
     def health(self) -> str:
-        cherrypy.response.headers["Content-Type"] = "text/plain"
-        unhealthy = [f"- {name}" for name, fn in self.health_conditions.items() if not fn()]
-        if not unhealthy:
-            cherrypy.response.status = 200
-            return "ok\r\n"
-        else:
-            cherrypy.response.status = 503
-            cherrypy.response.headers["Content-Type"] = "text/plain"
-            return "not ok\r\n\r\n" + "\r\n".join(unhealthy) + "\r\n"
+        pass
 
     @cherrypy.expose
     @cherrypy.tools.allow(methods=["GET"])
     def metrics(self) -> bytes:
-        cherrypy.response.headers["Content-Type"] = CONTENT_TYPE_LATEST
-        return generate_latest()
+        pass

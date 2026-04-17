@@ -182,10 +182,4 @@ def create_jwk_dict(cert: Certificate) -> Json:
 
 
 def add_args(arg_parser: ArgumentParser) -> None:
-    arg_parser.add_argument(
-        "--psk",
-        help="Pre-shared key",
-        type=lambda x: x if len(x) > 0 else None,
-        default=None,
-        dest="psk",
-    )
+    pass

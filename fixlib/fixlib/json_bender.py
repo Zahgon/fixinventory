@@ -34,7 +34,7 @@ class Bender(ABC):
         return source
 
     def or_else(self, other: Bender) -> Bender:
-        return OrElse(self, other)
+        pass
 
     def __eq__(self, other: Any) -> Bender:  # type: ignore
         return Eq(self, other)

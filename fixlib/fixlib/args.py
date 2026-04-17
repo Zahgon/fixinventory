@@ -66,56 +66,12 @@ class ArgumentParser(argparse.ArgumentParser):
             )
 
     def print_machine_help(self) -> None:
-        for action in self._actions:
-            if action.default == argparse.SUPPRESS:
-                continue
-            for option_string in action.option_strings:
-                print(option_string)
+        pass
 
     def parse_known_args(  # type: ignore
         self, args: Optional[Sequence[str]] = None, namespace: Optional[Namespace] = None
     ) -> Tuple[Namespace, List[str]]:
-        for action in self._actions:
-            env_name = None
-            for option_string in action.option_strings:
-                if option_string.startswith("--"):
-                    env_name = self.env_args_prefix + option_string[2:].replace("-", "_").upper()
-                    break
-            if env_name is not None and action.default != argparse.SUPPRESS:
-                new_default: Any = None
-                if action.nargs not in (0, None):
-                    new_default = os.environ.get(env_name)
-                    if new_default is not None:
-                        new_default = new_default.split(" ")
-                    else:
-                        new_default = []
-                        for i in range(255):
-                            new_ittr_default = os.environ.get(env_name + str(i))
-                            if new_ittr_default is not None:
-                                new_default.append(new_ittr_default)
-                        if len(new_default) == 0:
-                            new_default = None
-                else:
-                    new_default = os.environ.get(env_name)
-
-                if new_default is not None:
-                    type_goal: Any = str
-                    if isinstance(action.type, type):
-                        type_goal = action.type
-                    elif callable(action.type):
-                        type_goal = action.type
-                    else:
-                        type_goal = type(action.default)
-
-                    if isinstance(new_default, list):
-                        new_default = [convert(n, type_goal) for n in new_default]
-                    else:
-                        new_default = convert(new_default, type_goal)
-
-                    action.default = new_default
-        ret_args, ret_argv = super().parse_known_args(args=args, namespace=namespace)
-        ArgumentParser.args = ret_args  # type: ignore
-        return ret_args, ret_argv  # type: ignore
+        pass
 
 
 def get_arg_parser(
@@ -151,37 +107,4 @@ def convert(value: Any, type_goal: Union[type, Callable[[Any], Any]]) -> Any:
 
 
 def args_dispatcher(dispatch_to: List[str], use_which: bool, argv: List[str]) -> Dict[str, List[str]]:
-    dispatch_args = defaultdict(list)
-    prog_args = defaultdict(list)
-
-    for prog in dispatch_to:
-        cmd = prog
-        if use_which:
-            cmd = shutil.which(prog)  # type: ignore
-        result = subprocess.run([cmd, "--machine-help"], capture_output=True)
-        if result.returncode != 0:
-            continue
-        for arg in result.stdout.decode("utf8").splitlines():
-            prog_args[arg].append(prog)
-
-    args = defaultdict(list)
-    for i, arg in enumerate(argv):
-        if arg.startswith("-"):
-            arg_index = i + 1
-            if len(argv) > arg_index:
-                while not argv[arg_index].startswith("-"):
-                    argval = str(argv[arg_index]).replace("'", "\\'")
-                    args[arg].append(f"'{argval}'")
-                    arg_index += 1
-                    if len(argv) <= arg_index:
-                        break
-            if arg not in args:
-                args[arg] = []
-
-    for main_arg, arg_list in args.items():
-        if main_arg in prog_args:
-            for prog in prog_args[main_arg]:
-                dispatch_args[prog].append(main_arg)
-                dispatch_args[prog].extend(arg_list)
-
-    return dict(dispatch_args)
+    pass

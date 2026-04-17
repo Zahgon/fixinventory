@@ -11,14 +11,14 @@ def make_direct_parser(fn: Callable[[str, int], parsy.Result]) -> Parser:
     """
     Make typed parser (required for mypy).
     """
-    return Parser(fn)
+    pass
 
 
 def make_parser(fn: Callable[[], Parser]) -> Parser:
     """
     Make typed parser (required for mypy).
     """
-    return generate(fn)
+    pass
 
 
 whitespace: Parser = regex(r"\s*")
@@ -80,23 +80,7 @@ iso_date_re = re.compile("[0-9]{4}-?[0-9]{2}-?[0-9]{2}T?[0-9]{2}:?[0-9]{2}:?[0-9
 
 @make_direct_parser
 def iso_date_time_utc_parser(stream: str, index: int) -> parsy.Result:
-    try:
-        if match := iso_date_re.match(stream, index):
-            ds = match.group()
-            try:
-                dt = datetime.fromisoformat(ds)
-            except Exception:
-                dt = parse_iso_8601(ds)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            else:
-                offset = dt.tzinfo.utcoffset(None)
-                if offset is not None and offset.total_seconds() > 0:
-                    dt = dt.astimezone(timezone.utc)
-            return parsy.Result.success(index + len(ds), dt)
-    except Exception:
-        pass
-    return parsy.Result.failure(index, "No valid ISO 8601 date time")
+    pass
 
 
 def unquoted_string_parser(*stop_words: str) -> Parser:
@@ -105,38 +89,7 @@ def unquoted_string_parser(*stop_words: str) -> Parser:
         # read from index until -> end_of_unquoted_str
         # all characters in between have to be allowed characters
         # there has to be at least one non-digit character (to not read numbers as strings)
-        start = index
-        found_no_number = False
-        valid_string_chars = True
-        number_found_dot = False
-
-        # valid numbers are: digits or a minus at the start: 123, -321, -123.321
-        def is_no_number() -> bool:
-            nonlocal number_found_dot
-            char = stream[index]
-            is_dot = char == "."
-            is_num = str.isdigit(char) or (start == index and char == "-") or (is_dot and not number_found_dot)
-            if not number_found_dot and is_dot:
-                number_found_dot = True
-            return not is_num
-
-        # look ahead to next delimiter
-        while index < len(stream) and valid_string_chars and not unquoted_end_of_unquoted_str.match(stream[index]):
-            found_no_number = is_no_number() if not found_no_number else found_no_number
-            valid_string_chars = unquoted_allowed_characters.match(stream[index]) is not None
-            index += 1
-
-        result = stream[start:index]
-        for stop in stop_words:
-            stop_len = len(stop)
-            # make sure the result is not a stop word. e.g. foo should match foo, foo-123 but not foobar
-            if result.startswith(stop) and (len(result) == stop_len or not str.isalpha(result[stop_len])):
-                return parsy.Result.failure(index, "A-Za-z0-9_-:")
-
-        if index <= len(stream) and valid_string_chars and found_no_number:
-            return parsy.Result.success(index, result)
-        else:
-            return parsy.Result.failure(index, "A-Za-z0-9_-:")
+        pass
 
     return unquoted_string_direct_parser
 
@@ -197,18 +150,12 @@ unquoted_string_p = lexeme(unquoted_string_dp)
 
 @make_parser
 def json_array_parser() -> Parser:
-    yield l_bracket_p
-    elements = yield json_value_p.sep_by(comma_p)
-    yield r_bracket_p
-    return elements
+    pass
 
 
 @make_parser
 def json_object_pair() -> Parser:
-    key = yield quoted_string_p | literal_p
-    yield colon_p
-    val = yield json_value_p
-    return key, val
+    pass
 
 
 json_object_p = l_curly_dp >> json_object_pair.sep_by(comma_dp).map(dict) << r_curly_dp

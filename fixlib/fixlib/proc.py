@@ -55,8 +55,7 @@ def restart() -> None:
 
 
 def delayed_exit(delay: int = 3) -> None:
-    time.sleep(delay)
-    os._exit(0)
+    pass
 
 
 def close_fds(safety_margin: int = 1024) -> None:
@@ -121,28 +120,19 @@ def handler(sig, frame) -> None:
 
 
 def initializer() -> None:
-    signal(SIGINT, handler)
-    signal(SIGTERM, handler)
-    increase_limits()
+    pass
 
 
 def collector_initializer(nice_level: int = 5) -> None:
-    initializer()
-    try:
-        os.nice(nice_level)
-    except Exception:
-        pass
+    pass
 
 
 def set_thread_name(thread_name: str = "fix") -> None:
-    threading.current_thread().name = thread_name
+    pass
 
 
 def emergency_shutdown(reason: str = "") -> None:
-    log.fatal(f"EMERGENCY SHUTDOWN: {reason}")
-    for p in psutil.Process().children(recursive=True):
-        p.kill()
-    psutil.Process().kill()
+    pass
 
 
 def kill_children(
@@ -178,175 +168,36 @@ def kill_children(
 
 
 def increase_limits() -> None:
-    if sys.platform != "linux":
-        return
-    for limit_name in ("RLIMIT_NOFILE", "RLIMIT_NPROC"):
-        soft_limit, hard_limit = resource.getrlimit(getattr(resource, limit_name))
-        log.debug(f"Current {limit_name} soft: {soft_limit} hard: {hard_limit}")
-        try:
-            if soft_limit < hard_limit:
-                log.debug(f"Increasing {limit_name} {soft_limit} -> {hard_limit}")
-                resource.setrlimit(getattr(resource, limit_name), (hard_limit, hard_limit))
-        except ValueError:
-            log.error(f"Failed to increase {limit_name} {soft_limit} -> {hard_limit}")
+    pass
 
 
 def num_default_threads(num_min_threads: int = 2) -> int:
-    count = num_min_threads
-    try:
-        # try to get the number of usable cores first
-        count = len(os.sched_getaffinity(0))
-    except AttributeError:
-        try:
-            count = cpu_count()
-        except Exception:
-            pass
-    if not isinstance(count, int):
-        count = num_min_threads
-    return max(count, num_min_threads)
+    pass
 
 
 def get_process_info(pid: int = None, proc: str = "/proc") -> Dict:
-    if sys.platform != "linux":
-        return {}
-    if pid is None:
-        pid = os.getpid()
-    process_info = {}
-    try:
-        with open(os.path.join(proc, str(pid), "status"), "r") as status:
-            for line in status:
-                k, v = line.split(":", 1)
-                v = re.sub("[ \t]+", " ", v.strip())
-                process_info[k.lower()] = v
-        for limit_name in ("NOFILE", "NPROC"):
-            process_info[f"RLIMIT_{limit_name}".lower()] = resource.getrlimit(getattr(resource, f"RLIMIT_{limit_name}"))
-    except (PermissionError, FileNotFoundError):
-        pass
-    return process_info
+    pass
 
 
 def get_file_descriptor_info(pid: int = None, proc: str = "/proc") -> Dict:
-    if sys.platform != "linux":
-        return {}
-    if pid is None:
-        pid = os.getpid()
-    pid = str(pid)
-    file_descriptor_info = {}
-    try:
-        for entry in os.listdir(os.path.join(proc, pid, "fd")):
-            entry_path = os.path.join(proc, pid, "fd", entry)
-            if os.path.islink(entry_path):
-                file_descriptor_info[entry] = {}
-                target = os.readlink(entry_path)
-                file_descriptor_info[entry]["target"] = target
-    except (PermissionError, FileNotFoundError):
-        pass
-    return file_descriptor_info
+    pass
 
 
 def get_pid_list(proc: str = "/proc") -> List:
-    if sys.platform != "linux":
-        return []
-    pids = []
-    for entry in os.listdir(proc):
-        try:
-            if os.path.isdir(os.path.join(proc, entry)) and entry.isdigit():
-                pids.append(int(entry))
-        except (PermissionError, FileNotFoundError):
-            pass
-    return pids
+    pass
 
 
 def get_all_process_info(pid: int = None, proc: str = "/proc") -> Dict:
-    if sys.platform != "linux":
-        return {}
-    if pid is None:
-        pid = os.getpid()
-    process_info = {}
-    process_info["parent"] = get_process_info(pid)
-    process_info["parent"]["file_descriptors"] = get_file_descriptor_info(pid, proc)
-    process_info["parent"]["num_file_descriptors"] = len(process_info["parent"]["file_descriptors"])
-    process_info["children"] = get_child_process_info(pid, proc)
-    for pid in process_info["children"]:
-        process_info["children"][pid]["file_descriptors"] = get_file_descriptor_info(pid, proc)
-        process_info["children"][pid]["num_file_descriptors"] = len(process_info["children"][pid]["file_descriptors"])
-    return process_info
+    pass
 
 
 def get_child_process_info(pid: int = None, proc: str = "/proc") -> Dict:
-    if sys.platform != "linux":
-        return {}
-    if pid is None:
-        pid = os.getpid()
-    child_process_info = {}
-    for pid in get_pid_list(proc):
-        process_info = get_process_info(pid)
-        if process_info.get("ppid") == str(pid):
-            child_process_info[pid] = dict(process_info)
-    return child_process_info
+    pass
 
 
 def get_stats() -> Dict:
-    try:
-        stats = {
-            "active_threads": threading.active_count(),
-            "thread_names": [thread.name for thread in threading.enumerate()],
-            "garbage_collector": gc.get_stats(),
-            "process": get_all_process_info(),
-        }
-        if sys.platform == "linux":
-            stats.update(
-                {
-                    "maxrss_parent_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024,
-                    "maxrss_children_bytes": resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss * 1024,
-                }
-            )
-        else:
-            stats.update({"maxrss_parent_bytes": 0, "maxrss_children_bytes": 0})
-        stats["maxrss_total_bytes"] = stats["maxrss_parent_bytes"] + stats["maxrss_children_bytes"]
-        num_fds_parent = stats["process"].get("parent", {}).get("num_file_descriptors", 0)
-        num_fds_children = sum([v["num_file_descriptors"] for v in stats["process"].get("children", {}).values()])
-        stats.update(
-            {
-                "maxrss_parent_human_readable": iec_size_format(stats["maxrss_parent_bytes"]),
-                "maxrss_children_human_readable": iec_size_format(stats["maxrss_children_bytes"]),
-                "maxrss_total_human_readable": iec_size_format(stats["maxrss_total_bytes"]),
-                "num_fds_parent": num_fds_parent,
-                "num_fds_children": num_fds_children,
-                "num_fds_total": num_fds_parent + num_fds_children,
-            }
-        )
-    except Exception:
-        log.exception("Error while trying to get stats")
-        return {}
-    else:
-        return stats
+    pass
 
 
 def log_stats(graph=None, garbage_collector_stats: bool = False) -> None:
-    stats = get_stats()
-    try:
-        log.debug(
-            f"Stats: max rss parent: {stats['maxrss_parent_human_readable']},"
-            f" children: {stats['maxrss_children_human_readable']},"
-            f" fds: {stats['num_fds_total']}/"
-            f"{stats['process'].get('parent', {}).get('rlimit_nofile', [0])[0]}"
-            f" active threads {stats['active_threads']}:"
-            f" {', '.join([thread for thread in stats['thread_names']])}"
-        )
-        if graph:
-            log.debug(f"Graph Stats: {stats['graph_size_human_readable']}")
-        if garbage_collector_stats:
-            gc_stats = " | ".join(
-                [
-                    (
-                        f"Gen {i}: collections {data.get('collections')}, "
-                        f"collected {data.get('collected')}, "
-                        f"uncollectable {data.get('uncollectable')}"
-                    )
-                    for i, data in enumerate(stats["garbage_collector"])
-                ]
-            )
-            log.debug(f"Garbage Collector Stats: {gc_stats}")
-    except Exception:
-        log.exception("Error while trying to log stats")
+    pass

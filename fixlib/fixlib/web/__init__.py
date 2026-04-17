@@ -25,7 +25,7 @@ class WebServer(threading.Thread):
 
     @property
     def serving(self) -> bool:
-        return bool(cherrypy.engine.state == cherrypy.engine.states.STARTED)
+        pass
 
     def run(self) -> None:
         # CherryPy always prefixes its log messages with a timestamp.
@@ -33,54 +33,10 @@ class WebServer(threading.Thread):
         # fixed string. So instead of having duplicate timestamps in
         # each web server related log message they are now prefixed
         # with the string 'CherryPy'.
-        cherrypy.config.reset()
-        cherrypy._cplogging.LogManager.time = lambda self: "CherryPy"
-        cherrypy.engine.unsubscribe("graceful", cherrypy.log.reopen_files)
-
-        # We always mount at / as well as any user configured --web-path
-        cherrypy.tree.mount(
-            self.web_app,
-            "",
-            self.web_app.config,
-        )
-        if self.web_app.mountpoint not in ("/", ""):
-            cherrypy.tree.mount(
-                self.web_app,
-                self.web_app.mountpoint,
-                self.web_app.config,
-            )
-        ssl_args = {}
-        if self.ssl_cert and self.ssl_key:
-            ssl_args = {
-                "server.ssl_module": "builtin",
-                "server.ssl_certificate": self.ssl_cert,
-                "server.ssl_private_key": self.ssl_key,
-            }
-        cherrypy.config.update(
-            {
-                "global": {
-                    "engine.autoreload.on": False,
-                    "server.socket_host": self.web_host,
-                    "server.socket_port": self.web_port,
-                    "log.screen": False,
-                    "log.access_file": "",
-                    "log.error_file": "",
-                    "tools.log_headers.on": False,
-                    "tools.encode.on": True,
-                    "tools.encode.encoding": "utf-8",
-                    "request.show_tracebacks": False,
-                    "request.show_mismatched_params": False,
-                    **ssl_args,
-                    **self.extra_config,
-                }
-            }
-        )
-        cherrypy.engine.start()
-        cherrypy.engine.block()
+        pass
 
     def shutdown(self) -> None:
-        log.debug("Received request to shutdown http server threads")
-        cherrypy.engine.exit()
+        pass
 
     def mount(self, mountpoint: str, app: Any) -> None:
-        cherrypy.tree.mount(app, mountpoint, app.config)
+        pass

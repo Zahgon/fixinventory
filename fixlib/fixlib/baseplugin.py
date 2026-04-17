@@ -60,13 +60,7 @@ class BasePlugin(ABC, Thread):
         self.finished = False
 
     def run(self) -> None:
-        try:
-            self.go()
-        except Exception:
-            metrics_unhandled_plugin_exceptions.labels(plugin=self.name).inc()
-            log.exception(f"Caught unhandled plugin exception in {self.name}")
-        else:
-            self.finished = True
+        pass
 
     @abstractmethod
     def go(self) -> None:
@@ -105,50 +99,10 @@ class BaseActionPlugin(ABC, Thread):
 
     def action_processor(self, message: Json) -> Optional[Json]:
         """Process incoming action messages"""
-        if not isinstance(message, dict):
-            log.error(f"Invalid message: {message}")
-            return None
-        kind = message.get("kind")
-        message_type = message.get("message_type")
-        data: Json = message.get("data", {})
-        log.debug(f"Received message of kind {kind}, type {message_type}, data: {data}")
-        if kind == "action":
-            try:
-                if message_type == self.action:
-                    start_time = time.time()
-                    self.do_action(data)
-                    run_time = int(time.time() - start_time)
-                    log.debug(f"{self.action} ran for {run_time} seconds")
-                else:
-                    raise ValueError(f"Unknown message type {message_type}")
-            except Exception as e:
-                log.exception(f"Failed to {message_type}: {e}")
-                reply_kind = "action_error"
-            else:
-                reply_kind = "action_done"
-
-            return {
-                "kind": reply_kind,
-                "message_type": message_type,
-                "data": data,
-            }
-        else:
-            return None
+        pass
 
     def run(self) -> None:
-        try:
-            # ArgumentParser.args = self._args
-            # fixlib.config._config = self._config
-            # setup_logger("fixworker")
-            # fixlib.proc.initializer()
-            current_thread().name = self.name
-            if self.bootstrap():
-                self.go()
-        except Exception:
-            metrics_unhandled_plugin_exceptions.labels(plugin=self.name).inc()
-            log.exception(f"Caught unhandled plugin exception in {self.name}")
-        else:
-            self.finished = True
+        pass
 
     @abstractmethod
     def bootstrap(self) -> bool:
@@ -159,21 +113,7 @@ class BaseActionPlugin(ABC, Thread):
         pass
 
     def go(self) -> None:
-        core_actions = CoreActions(
-            identifier=f"{ArgumentParser.args.subscriber_id}-actions-{self.action}-{self.name}",
-            fixcore_uri=fixcore.http_uri,
-            fixcore_ws_uri=fixcore.ws_uri,
-            actions={
-                self.action: {
-                    "timeout": self.timeout,
-                    "wait_for_completion": self.wait_for_completion,
-                },
-            },
-            message_processor=self.action_processor,
-            tls_data=self.tls_data,
-        )
-        core_actions.start()
-        core_actions.join()
+        pass
 
     @staticmethod
     def add_args(arg_parser: ArgumentParser) -> None:
@@ -226,62 +166,34 @@ class BaseCollectorPlugin(BasePlugin):
     @staticmethod
     def auto_enableable() -> bool:
         """Should this collector be enabled by default?"""
-        return False
+        pass
 
     @staticmethod
     def update_tag(config: Config, resource: BaseResource, key: str, value: str) -> bool:
         """Update the tag of a resource"""
-        return resource.update_tag(key, value)
+        pass
 
     @staticmethod
     def delete_tag(config: Config, resource: BaseResource, key: str) -> bool:
         """Delete the tag of a resource"""
-        return resource.delete_tag(key)
+        pass
 
     @staticmethod
     def pre_cleanup(config: Config, resource: BaseResource, graph: Graph) -> bool:
-        return resource.pre_cleanup(graph)
+        pass
 
     @staticmethod
     def cleanup(config: Config, resource: BaseResource, graph: Graph) -> bool:
-        return resource.cleanup(graph)
+        pass
 
     def go(self) -> None:
-        self.collect()
-        if self.graph_merge_kind == GraphMergeKind.cloud or len(self.graph) > 1:
-            if self.graph_merge_kind == GraphMergeKind.account:
-                log.debug("Using backwards compatibility mode")
-            assert isinstance(self.graph.root, BaseResource)
-            log.debug(f"Sending graph of {self.graph.root.kdname} to queue")
-            self.send_graph(self.graph)
+        pass
 
     def new_graph(self) -> Graph:
-        return Graph(root=self.root)
+        pass
 
     def send_account_graph(self, graph: Graph) -> None:
-        if not isinstance(graph, Graph):
-            log.error(f"Expected Graph, got {type(graph)}")
-            return
-        assert isinstance(graph.root, BaseResource)
-        kdname = graph.root.kdname
-        if self.max_resources_per_account and len(graph.nodes) > self.max_resources_per_account:
-            raise MaxNodesExceeded(
-                f"Graph of {kdname} has exceeds maximum number of resources ({self.max_resources_per_account})"
-            )
-
-        if self.graph_merge_kind == GraphMergeKind.account:
-            cloud_graph = self.new_graph()
-            cloud_graph.merge(graph, skip_deferred_edges=True)
-            log.debug(f"Sending graph of {kdname} to queue")
-            self.send_graph(cloud_graph)
-        elif self.graph_merge_kind == GraphMergeKind.cloud:
-            self.graph.merge(graph, skip_deferred_edges=True)
-        else:
-            raise ValueError(f"Unknown graph merge kind {self.graph_merge_kind}")
+        pass
 
     def send_graph(self, graph: Graph) -> None:
-        if self._graph_queue is None:
-            raise RuntimeError("Unable to send graph - no graph queue set")
-        if not isinstance(graph, Graph):
-            raise TypeError(f"Unable to send graph - expected type Graph, got {type(graph)}")
-        self._graph_queue.put(graph)
+        pass
